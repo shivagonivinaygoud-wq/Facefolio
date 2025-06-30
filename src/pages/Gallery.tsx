@@ -1,104 +1,69 @@
 
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, Image } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Image, Plus, FolderOpen } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import PhotoCard from '../components/PhotoCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-interface FamilyGroup {
+interface Group {
   id: string;
   name: string;
-  photos: {
-    id: string;
-    src: string;
-    alt: string;
-    uploadDate: string;
-  }[];
+  description: string;
+  photoCount: number;
+  coverPhoto?: string;
+  createdAt: string;
+  detectedPeople: string[];
 }
 
 const Gallery = () => {
-  const [familyGroups, setFamilyGroups] = useState<FamilyGroup[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-  // Simulate API call to fetch family groups
   useEffect(() => {
-    const fetchFamilyGroups = async () => {
+    const fetchGroups = async () => {
       setLoading(true);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock data - in a real app, this would come from your backend
-      const mockGroups: FamilyGroup[] = [
+      const mockGroups: Group[] = [
         {
           id: '1',
-          name: 'Mom',
-          photos: [
-            {
-              id: '1',
-              src: 'https://images.unsplash.com/photo-1494790108755-2616b5b8ef3c?w=400',
-              alt: 'Mom photo 1',
-              uploadDate: '2024-01-15'
-            },
-            {
-              id: '2',
-              src: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-              alt: 'Mom photo 2',
-              uploadDate: '2024-01-20'
-            }
-          ]
+          name: 'Family Vacation 2024',
+          description: 'Our amazing summer trip to the mountains',
+          photoCount: 24,
+          coverPhoto: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
+          createdAt: '2024-01-15',
+          detectedPeople: ['Mom', 'Dad', 'Kids']
         },
         {
           id: '2',
-          name: 'Dad',
-          photos: [
-            {
-              id: '3',
-              src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
-              alt: 'Dad photo 1',
-              uploadDate: '2024-01-18'
-            }
-          ]
+          name: 'Birthday Party',
+          description: 'Mom\'s surprise birthday celebration',
+          photoCount: 18,
+          coverPhoto: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400',
+          createdAt: '2024-01-20',
+          detectedPeople: ['Mom', 'Dad', 'Kids', 'Grandparents']
         },
         {
           id: '3',
-          name: 'Kids',
-          photos: [
-            {
-              id: '4',
-              src: 'https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400',
-              alt: 'Kids photo 1',
-              uploadDate: '2024-01-22'
-            },
-            {
-              id: '5',
-              src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-              alt: 'Kids photo 2',
-              uploadDate: '2024-01-25'
-            },
-            {
-              id: '6',
-              src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-              alt: 'Kids photo 3',
-              uploadDate: '2024-01-28'
-            }
-          ]
+          name: 'Kids Activities',
+          description: 'School events and sports',
+          photoCount: 31,
+          coverPhoto: 'https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400',
+          createdAt: '2024-01-25',
+          detectedPeople: ['Kids']
         }
       ];
       
-      setFamilyGroups(mockGroups);
+      setGroups(mockGroups);
       setLoading(false);
     };
 
-    fetchFamilyGroups();
+    fetchGroups();
   }, []);
 
-  const filteredGroups = selectedGroup 
-    ? familyGroups.filter(group => group.id === selectedGroup)
-    : familyGroups;
-
-  const totalPhotos = familyGroups.reduce((total, group) => total + group.photos.length, 0);
+  const totalPhotos = groups.reduce((total, group) => total + group.photoCount, 0);
+  const allDetectedPeople = new Set(groups.flatMap(g => g.detectedPeople));
 
   if (loading) {
     return (
@@ -107,7 +72,7 @@ const Gallery = () => {
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-4">
             <LoadingSpinner size="lg" />
-            <p className="text-gray-600">Loading your photo gallery...</p>
+            <p className="text-gray-600">Loading your albums...</p>
           </div>
         </div>
       </div>
@@ -124,91 +89,90 @@ const Gallery = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Photo Gallery</h1>
           <div className="flex items-center justify-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4 text-purple-500" />
-              <span className="text-gray-600">{familyGroups.length} Family Members</span>
+              <FolderOpen className="w-4 h-4 text-purple-500" />
+              <span className="text-gray-600">{groups.length} Albums</span>
             </div>
             <div className="flex items-center space-x-2">
               <Image className="w-4 h-4 text-pink-500" />
               <span className="text-gray-600">{totalPhotos} Photos</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <Users className="w-4 h-4 text-blue-500" />
+              <span className="text-gray-600">{allDetectedPeople.size} People</span>
+            </div>
           </div>
         </div>
 
-        {familyGroups.length === 0 ? (
+        {groups.length === 0 ? (
           /* Empty State */
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Image className="w-10 h-10 text-purple-400" />
+              <FolderOpen className="w-10 h-10 text-purple-400" />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">No Photos Yet</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">No Albums Yet</h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Start by uploading some photos to see them organized by family members here.
+              Create your first album to start organizing your photos by events, people, or occasions.
             </p>
-            <a
-              href="/upload"
+            <Link
+              to="/"
               className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:scale-105 transition-transform"
             >
-              <span>Upload Photos</span>
-            </a>
+              <Plus className="w-5 h-5" />
+              <span>Create Album</span>
+            </Link>
           </div>
         ) : (
-          <>
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              <button
-                onClick={() => setSelectedGroup(null)}
-                className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                  selectedGroup === null
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                    : 'bg-white text-gray-600 hover:bg-purple-50'
-                }`}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groups.map((group) => (
+              <Link
+                key={group.id}
+                to={`/gallery/${group.id}`}
+                className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden animate-fade-in"
               >
-                All ({totalPhotos})
-              </button>
-              {familyGroups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => setSelectedGroup(group.id)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                    selectedGroup === group.id
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                      : 'bg-white text-gray-600 hover:bg-purple-50'
-                  }`}
-                >
-                  {group.name} ({group.photos.length})
-                </button>
-              ))}
-            </div>
-
-            {/* Photo Groups */}
-            <div className="space-y-12">
-              {filteredGroups.map((group) => (
-                <div key={group.id} className="animate-fade-in">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                      <Users className="w-4 h-4 text-white" />
+                <div className="aspect-video overflow-hidden">
+                  {group.coverPhoto ? (
+                    <img
+                      src={group.coverPhoto}
+                      alt={group.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
+                      <Image className="w-12 h-12 text-purple-400" />
                     </div>
-                    <h2 className="text-2xl font-semibold text-gray-900">{group.name}</h2>
-                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-                      {group.photos.length} photo{group.photos.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
+                  )}
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{group.name}</h3>
+                  <p className="text-gray-600 mb-3 line-clamp-2">{group.description}</p>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {group.photos.map((photo) => (
-                      <PhotoCard
-                        key={photo.id}
-                        src={photo.src}
-                        alt={photo.alt}
-                        uploadDate={new Date(photo.uploadDate).toLocaleDateString()}
-                        className="animate-scale-in"
-                      />
-                    ))}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-purple-600 font-medium">
+                        {group.photoCount} photo{group.photoCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="text-gray-500">
+                        {new Date(group.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    {group.detectedPeople.length > 0 && (
+                      <div className="flex items-center space-x-1">
+                        <Users className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">
+                          {group.detectedPeople.slice(0, 3).join(', ')}
+                          {group.detectedPeople.length > 3 && ` +${group.detectedPeople.length - 3}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </Link>
+            ))}
+          </div>
         )}
       </main>
     </div>

@@ -1,7 +1,9 @@
 
 import React, { useState, useCallback } from 'react';
-import { Upload as UploadIcon, X, Check, Users } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { Upload as UploadIcon, X, Check, Users, ArrowLeft, FolderOpen } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import GroupSelector from '../components/GroupSelector';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface UploadedFile {
@@ -13,9 +15,26 @@ interface UploadedFile {
   faces?: number;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  photoCount: number;
+}
+
 const Upload = () => {
+  const { groupId } = useParams();
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(groupId || '');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Mock groups data
+  const groups: Group[] = [
+    { id: '1', name: 'Family Vacation 2024', photoCount: 24 },
+    { id: '2', name: 'Birthday Party', photoCount: 18 },
+    { id: '3', name: 'Kids Activities', photoCount: 31 }
+  ];
+
+  const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -36,6 +55,11 @@ const Upload = () => {
   };
 
   const handleFiles = (files: File[]) => {
+    if (!selectedGroupId) {
+      alert('Please select an album first');
+      return;
+    }
+
     files.forEach(file => {
       const id = Math.random().toString(36).substr(2, 9);
       const preview = URL.createObjectURL(file);
@@ -93,8 +117,7 @@ const Upload = () => {
   };
 
   const startFaceClassification = (fileId: string) => {
-    // Placeholder for face classification API call
-    console.log(`Starting face classification for file: ${fileId}`);
+    console.log(`Starting face classification for file: ${fileId} in group: ${selectedGroupId}`);
     // In a real app, this would call your backend API
   };
 
@@ -103,24 +126,61 @@ const Upload = () => {
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Upload Your Photos</h1>
-          <p className="text-lg text-gray-600">
-            Drag and drop your images or click to select files
-          </p>
+        {/* Header */}
+        <div className="mb-8">
+          <Link 
+            to="/"
+            className="inline-flex items-center space-x-2 text-purple-600 hover:text-purple-700 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Albums</span>
+          </Link>
+          
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Upload Photos</h1>
+            <p className="text-lg text-gray-600">
+              Add photos to your album with drag and drop
+            </p>
+          </div>
         </div>
+
+        {/* Group Selection */}
+        <div className="mb-8">
+          <GroupSelector
+            groups={groups}
+            selectedGroupId={selectedGroupId}
+            onGroupSelect={setSelectedGroupId}
+          />
+        </div>
+
+        {/* Selected Group Info */}
+        {selectedGroup && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 mb-8 border border-purple-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <FolderOpen className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">{selectedGroup.name}</h3>
+                <p className="text-sm text-gray-600">{selectedGroup.photoCount} existing photos</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Upload Zone */}
         <div
           className={`relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 ${
             isDragOver
               ? 'border-purple-400 bg-purple-50'
-              : 'border-gray-300 bg-white/60 backdrop-blur-sm hover:border-purple-300 hover:bg-purple-50/50'
+              : selectedGroupId
+              ? 'border-gray-300 bg-white/60 backdrop-blur-sm hover:border-purple-300 hover:bg-purple-50/50'
+              : 'border-gray-200 bg-gray-50'
           }`}
           onDrop={handleDrop}
           onDragOver={(e) => {
             e.preventDefault();
-            setIsDragOver(true);
+            if (selectedGroupId) setIsDragOver(true);
           }}
           onDragLeave={() => setIsDragOver(false)}
         >
@@ -131,26 +191,35 @@ const Upload = () => {
             onChange={handleFileInput}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             id="file-upload"
+            disabled={!selectedGroupId}
           />
           
           <div className="space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto">
-              <UploadIcon className="w-8 h-8 text-white" />
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${
+              selectedGroupId 
+                ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+                : 'bg-gray-300'
+            }`}>
+              <UploadIcon className={`w-8 h-8 ${selectedGroupId ? 'text-white' : 'text-gray-500'}`} />
             </div>
             
             <div>
-              <p className="text-xl font-semibold text-gray-700 mb-2">
-                Drop your photos here
+              <p className={`text-xl font-semibold mb-2 ${
+                selectedGroupId ? 'text-gray-700' : 'text-gray-400'
+              }`}>
+                {selectedGroupId ? 'Drop your photos here' : 'Select an album first'}
               </p>
-              <p className="text-gray-500 mb-4">
-                or click to browse your files
+              <p className={`mb-4 ${selectedGroupId ? 'text-gray-500' : 'text-gray-400'}`}>
+                {selectedGroupId ? 'or click to browse your files' : 'Choose an album to upload photos'}
               </p>
-              <label
-                htmlFor="file-upload"
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:scale-105 transition-transform cursor-pointer"
-              >
-                <span>Choose Files</span>
-              </label>
+              {selectedGroupId && (
+                <label
+                  htmlFor="file-upload"
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-medium hover:scale-105 transition-transform cursor-pointer"
+                >
+                  <span>Choose Files</span>
+                </label>
+              )}
             </div>
           </div>
         </div>

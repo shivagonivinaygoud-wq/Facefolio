@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Gallery from "./pages/Gallery";
+import GroupGallery from "./pages/GroupGallery";
 import Search from "./pages/Search";
 import NotFound from "./pages/NotFound";
 
@@ -21,7 +22,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/upload" element={<Upload />} />
+          <Route path="/upload/:groupId" element={<Upload />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/gallery/:groupId" element={<GroupGallery />} />
           <Route path="/search" element={<Search />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
