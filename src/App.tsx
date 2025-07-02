@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Gallery from "./pages/Gallery";
 import GroupGallery from "./pages/GroupGallery";
+import GroupMembers from "./pages/GroupMembers";
 import Search from "./pages/Search";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/upload/:groupId" element={<Upload />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/gallery/:groupId" element={<GroupGallery />} />
+          <Route path="/gallery/:groupId/members" element={<GroupMembers />} />
           <Route path="/search" element={<Search />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

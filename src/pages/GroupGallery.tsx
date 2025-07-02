@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, Users, Image, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, Users, Image, Share2, UserPlus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PhotoCard from '../components/PhotoCard';
+import PhotoLightbox from '../components/PhotoLightbox';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Photo {
@@ -26,6 +27,8 @@ const GroupGallery = () => {
   const { groupId } = useParams();
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -82,6 +85,23 @@ const GroupGallery = () => {
       fetchGroup();
     }
   }, [groupId]);
+
+  const openLightbox = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const nextPhoto = () => {
+    setCurrentPhotoIndex((prev) => 
+      prev === group!.photos.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const previousPhoto = () => {
+    setCurrentPhotoIndex((prev) => 
+      prev === 0 ? group!.photos.length - 1 : prev - 1
+    );
+  };
 
   if (loading) {
     return (
@@ -148,6 +168,14 @@ const GroupGallery = () => {
               
               <div className="flex items-center space-x-3">
                 <Link
+                  to={`/gallery/${group.id}/members`}
+                  className="inline-flex items-center space-x-2 bg-white text-purple-700 px-4 py-2 rounded-xl font-medium hover:bg-purple-50 transition-colors border border-purple-200"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Members</span>
+                </Link>
+                
+                <Link
                   to={`/upload/${group.id}`}
                   className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-medium hover:scale-105 transition-transform"
                 >
@@ -183,8 +211,8 @@ const GroupGallery = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {group.photos.map((photo) => (
-              <div key={photo.id} className="relative group">
+            {group.photos.map((photo, index) => (
+              <div key={photo.id} className="relative group cursor-pointer" onClick={() => openLightbox(index)}>
                 <PhotoCard
                   src={photo.src}
                   alt={photo.alt}
@@ -207,6 +235,15 @@ const GroupGallery = () => {
           </div>
         )}
       </main>
+
+      <PhotoLightbox
+        isOpen={lightboxOpen}
+        photos={group.photos}
+        currentIndex={currentPhotoIndex}
+        onClose={() => setLightboxOpen(false)}
+        onNext={nextPhoto}
+        onPrevious={previousPhoto}
+      />
     </div>
   );
 };
