@@ -4,7 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
+import Auth from "./pages/Auth";
 import Upload from "./pages/Upload";
 import Gallery from "./pages/Gallery";
 import GroupGallery from "./pages/GroupGallery";
@@ -19,19 +22,50 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/upload/:groupId" element={<Upload />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/gallery/:groupId" element={<GroupGallery />} />
-          <Route path="/gallery/:groupId/members" element={<GroupMembers />} />
-          <Route path="/search" element={<Search />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path="/upload" element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            } />
+            <Route path="/upload/:groupId" element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            } />
+            <Route path="/gallery" element={
+              <ProtectedRoute>
+                <Gallery />
+              </ProtectedRoute>
+            } />
+            <Route path="/gallery/:groupId" element={
+              <ProtectedRoute>
+                <GroupGallery />
+              </ProtectedRoute>
+            } />
+            <Route path="/gallery/:groupId/members" element={
+              <ProtectedRoute>
+                <GroupMembers />
+              </ProtectedRoute>
+            } />
+            <Route path="/search" element={
+              <ProtectedRoute>
+                <Search />
+              </ProtectedRoute>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
