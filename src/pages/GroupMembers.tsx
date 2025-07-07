@@ -1,60 +1,70 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Users } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MemberCard from '../components/MemberCard';
 import AddMemberModal from '../components/AddMemberModal';
-
-interface Member {
-  id: string;
-  name: string;
-  phoneNumber: string;
-  profilePicture?: string;
-}
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useGroupMembers, useAddGroupMember, useUpdateGroupMember, useDeleteGroupMember } from '@/hooks/useGroupMembers';
+import { useGroups } from '@/hooks/useGroups';
 
 const GroupMembers = () => {
   const { groupId } = useParams();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      phoneNumber: '+1 (555) 123-4567',
-      profilePicture: 'https://images.unsplash.com/photo-1494790108755-2616b5b8ef3c?w=100'
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      phoneNumber: '+1 (555) 987-6543'
-    },
-    {
-      id: '3',
-      name: 'Emily Davis',
-      phoneNumber: '+1 (555) 456-7890',
-      profilePicture: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100'
+  const [showAddModal, setShowAddModal] = React.useState(false);
+  
+  const { data: groups = [] } = useGroups();
+  const { data: members = [], isLoading } = useGroupMembers(groupId!);
+  const addMemberMutation = useAddGroupMember();
+  const updateMemberMutation = useUpdateGroupMember();
+  const deleteMemberMutation = useDeleteGroupMember();
+
+  const group = groups.find(g => g.id === groupId);
+  const groupName = group?.name || 'Unknown Group';
+
+  const handleAddMember = async (memberData: { name: string; phoneNumber: string; profilePicture?: File }) => {
+    if (!groupId) return;
+    
+    let profilePictureUrl = '';
+    
+    if (memberData.profilePicture) {
+      // TODO: Upload profile picture to storage
+      // For now, we'll use a placeholder
+      profilePictureUrl = 'https://images.unsplash.com/photo-1494790108755-2616b5b8ef3c?w=100';
     }
-  ]);
 
-  const groupName = groupId === '1' ? 'Family Vacation 2024' : 
-                   groupId === '2' ? 'Birthday Party' : 'Kids Activities';
-
-  const handleAddMember = (memberData: Omit<Member, 'id'>) => {
-    const newMember: Member = {
-      id: (members.length + 1).toString(),
-      ...memberData
-    };
-    setMembers([...members, newMember]);
+    await addMemberMutation.mutateAsync({
+      group_id: groupId,
+      name: memberData.name,
+      phone_number: memberData.phoneNumber,
+      profile_picture_url: profilePictureUrl || null,
+    });
+    
+    setShowAddModal(false);
   };
 
-  const handleEditMember = (member: Member) => {
+  const handleEditMember = async (member: any) => {
+    // TODO: Implement edit modal
     console.log('Edit member:', member);
-    // In a real app, this would open an edit modal
   };
 
-  const handleDeleteMember = (memberId: string) => {
-    setMembers(members.filter(m => m.id !== memberId));
+  const handleDeleteMember = async (memberId: string) => {
+    await deleteMemberMutation.mutateAsync(memberId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <Navbar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center space-y-4">
+            <LoadingSpinner size="lg" />
+            <p className="text-gray-600">Loading members...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -117,9 +127,14 @@ const GroupMembers = () => {
             {members.map((member) => (
               <MemberCard
                 key={member.id}
-                member={member}
+                member={{
+                  id: member.id,
+                  name: member.name,
+                  phoneNumber: member.phone_number || '',
+                  profilePicture: member.profile_picture_url || undefined,
+                }}
                 onEdit={handleEditMember}
-                onDelete={handleDeleteMember}
+                onDelete={() => handleDeleteMember(member.id)}
               />
             ))}
           </div>

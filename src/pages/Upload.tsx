@@ -5,6 +5,8 @@ import { Upload as UploadIcon, X, Check, Users, ArrowLeft, FolderOpen } from 'lu
 import Navbar from '../components/Navbar';
 import GroupSelector from '../components/GroupSelector';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useGroups } from '@/hooks/useGroups';
+import { useUploadPhoto } from '@/hooks/usePhotos';
 
 interface UploadedFile {
   id: string;
@@ -15,24 +17,14 @@ interface UploadedFile {
   faces?: number;
 }
 
-interface Group {
-  id: string;
-  name: string;
-  photoCount: number;
-}
-
 const Upload = () => {
   const { groupId } = useParams();
   const [selectedGroupId, setSelectedGroupId] = useState<string>(groupId || '');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Mock groups data
-  const groups: Group[] = [
-    { id: '1', name: 'Family Vacation 2024', photoCount: 24 },
-    { id: '2', name: 'Birthday Party', photoCount: 18 },
-    { id: '3', name: 'Kids Activities', photoCount: 31 }
-  ];
+  const { data: groups = [] } = useGroups();
+  const uploadPhotoMutation = useUploadPhoto();
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
@@ -54,13 +46,13 @@ const Upload = () => {
     }
   };
 
-  const handleFiles = (files: File[]) => {
+  const handleFiles = async (files: File[]) => {
     if (!selectedGroupId) {
       alert('Please select an album first');
       return;
     }
 
-    files.forEach(file => {
+    for (const file of files) {
       const id = Math.random().toString(36).substr(2, 9);
       const preview = URL.createObjectURL(file);
       
@@ -74,36 +66,25 @@ const Upload = () => {
       
       setUploadedFiles(prev => [...prev, newFile]);
       
-      // Simulate upload progress
-      simulateUpload(id);
-    });
-  };
-
-  const simulateUpload = (fileId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
+      try {
+        await uploadPhotoMutation.mutateAsync({ file, groupId: selectedGroupId });
         
-        setUploadedFiles(prev => prev.map(file => 
-          file.id === fileId 
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === id 
             ? { 
-                ...file, 
+                ...f, 
                 progress: 100, 
-                status: 'completed',
-                faces: Math.floor(Math.random() * 4) + 1 // Random number of faces
+                status: 'completed' as const,
+                faces: Math.floor(Math.random() * 4) + 1
               }
-            : file
+            : f
         ));
-      } else {
-        setUploadedFiles(prev => prev.map(file => 
-          file.id === fileId ? { ...file, progress } : file
+      } catch (error) {
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === id ? { ...f, status: 'error' as const } : f
         ));
       }
-    }, 500);
+    }
   };
 
   const removeFile = (fileId: string) => {
@@ -114,11 +95,6 @@ const Upload = () => {
       }
       return prev.filter(f => f.id !== fileId);
     });
-  };
-
-  const startFaceClassification = (fileId: string) => {
-    console.log(`Starting face classification for file: ${fileId} in group: ${selectedGroupId}`);
-    // In a real app, this would call your backend API
   };
 
   return (
@@ -162,7 +138,7 @@ const Upload = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">{selectedGroup.name}</h3>
-                <p className="text-sm text-gray-600">{selectedGroup.photoCount} existing photos</p>
+                <p className="text-sm text-gray-600">Ready to upload</p>
               </div>
             </div>
           </div>
@@ -253,47 +229,26 @@ const Upload = () => {
                       {file.status === 'uploading' && (
                         <div className="mt-2">
                           <div className="flex items-center space-x-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${file.progress}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-gray-500">
-                              {Math.round(file.progress)}%
-                            </span>
+                            <LoadingSpinner size="sm" />
+                            <span className="text-sm text-gray-500">Uploading...</span>
                           </div>
                         </div>
                       )}
                       
-                      {file.status === 'completed' && file.faces && (
+                      {file.status === 'completed' && (
                         <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
                           <Check className="w-4 h-4" />
-                          <span>{file.faces} face{file.faces > 1 ? 's' : ''} detected</span>
+                          <span>Upload complete</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      {file.status === 'uploading' && <LoadingSpinner size="sm" />}
-                      
-                      {file.status === 'completed' && (
-                        <button
-                          onClick={() => startFaceClassification(file.id)}
-                          className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
-                        >
-                          <Users className="w-4 h-4" />
-                          <span>Classify</span>
-                        </button>
-                      )}
-                      
-                      <button
-                        onClick={() => removeFile(file.id)}
-                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => removeFile(file.id)}
+                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
