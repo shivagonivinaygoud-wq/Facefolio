@@ -1,12 +1,7 @@
 
 import React from 'react';
 import { FolderOpen, ChevronDown } from 'lucide-react';
-
-interface Group {
-  id: string;
-  name: string;
-  photoCount: number;
-}
+import { Group } from '@/types';
 
 interface GroupSelectorProps {
   groups: Group[];
@@ -35,7 +30,7 @@ const GroupSelector: React.FC<GroupSelectorProps> = ({
           <option value="">Choose an album...</option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>
-              {group.name} ({group.photoCount} photos)
+              {group.name} ({group.photoCount || 0} photos)
             </option>
           ))}
         </select>
