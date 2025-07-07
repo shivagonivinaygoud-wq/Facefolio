@@ -9,6 +9,13 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useGroupMembers, useAddGroupMember, useUpdateGroupMember, useDeleteGroupMember } from '@/hooks/useGroupMembers';
 import { useGroups } from '@/hooks/useGroups';
 
+interface Member {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  profilePicture?: string;
+}
+
 const GroupMembers = () => {
   const { groupId } = useParams();
   const [showAddModal, setShowAddModal] = React.useState(false);
@@ -22,15 +29,18 @@ const GroupMembers = () => {
   const group = groups.find(g => g.id === groupId);
   const groupName = group?.name || 'Unknown Group';
 
-  const handleAddMember = async (memberData: { name: string; phoneNumber: string; profilePicture?: File }) => {
+  const handleAddMember = async (memberData: Omit<Member, "id">) => {
     if (!groupId) return;
     
     let profilePictureUrl = '';
     
-    if (memberData.profilePicture) {
+    // Handle profile picture if it's a File object
+    if (memberData.profilePicture && typeof memberData.profilePicture !== 'string') {
       // TODO: Upload profile picture to storage
       // For now, we'll use a placeholder
       profilePictureUrl = 'https://images.unsplash.com/photo-1494790108755-2616b5b8ef3c?w=100';
+    } else if (typeof memberData.profilePicture === 'string') {
+      profilePictureUrl = memberData.profilePicture;
     }
 
     await addMemberMutation.mutateAsync({
@@ -43,7 +53,7 @@ const GroupMembers = () => {
     setShowAddModal(false);
   };
 
-  const handleEditMember = async (member: any) => {
+  const handleEditMember = async (member: Member) => {
     // TODO: Implement edit modal
     console.log('Edit member:', member);
   };

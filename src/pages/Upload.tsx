@@ -7,6 +7,7 @@ import GroupSelector from '../components/GroupSelector';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGroups } from '@/hooks/useGroups';
 import { useUploadPhoto } from '@/hooks/usePhotos';
+import { Group } from '@/types';
 
 interface UploadedFile {
   id: string;
@@ -23,8 +24,16 @@ const Upload = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const { data: groups = [] } = useGroups();
+  const { data: groupsData = [] } = useGroups();
   const uploadPhotoMutation = useUploadPhoto();
+
+  // Transform the groups data to match our Group interface
+  const groups: Group[] = groupsData.map(group => ({
+    ...group,
+    photoCount: Array.isArray(group.photos) 
+      ? group.photos.length 
+      : (group.photos as any)?.[0]?.count || 0
+  }));
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 

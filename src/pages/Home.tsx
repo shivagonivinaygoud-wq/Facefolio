@@ -18,7 +18,11 @@ const Home = () => {
   };
 
   const totalPhotos = groups.reduce((total, group) => {
-    return total + (Array.isArray(group.photos) ? group.photos.length : group.photos?.count || 0);
+    // Handle both array format and count format from Supabase aggregation
+    const photosCount = Array.isArray(group.photos) 
+      ? group.photos.length 
+      : (group.photos as any)?.[0]?.count || 0;
+    return total + photosCount;
   }, 0);
 
   if (isLoading) {
@@ -107,7 +111,10 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-8">Your Albums</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {groups.map((group) => {
-                const photoCount = Array.isArray(group.photos) ? group.photos.length : group.photos?.count || 0;
+                // Handle both array format and count format from Supabase aggregation
+                const photoCount = Array.isArray(group.photos) 
+                  ? group.photos.length 
+                  : (group.photos as any)?.[0]?.count || 0;
                 
                 return (
                   <Link
