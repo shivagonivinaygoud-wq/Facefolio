@@ -1,0 +1,67 @@
+
+version: '3.8'
+
+services:
+  compreface-postgres-db:
+    image: postgres:11.5
+    container_name: "compreface-postgres-db"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=frs
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  compreface-admin:
+    image: exadel/compreface-admin:1.2.0
+    container_name: "compreface-admin"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_URL=jdbc:postgresql://compreface-postgres-db:5432/frs
+      - SPRING_PROFILES_ACTIVE=dev
+      - ENABLE_EMAIL_SERVER=false
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_USERNAME=username
+      - EMAIL_FROM=username@gmail.com
+      - EMAIL_PASSWORD=password
+      - ADMIN_JAVA_OPTS=-Xmx8g
+      - MAX_FILE_SIZE=5MB
+      - MAX_REQUEST_SIZE=10MB
+    depends_on:
+      - compreface-postgres-db
+      - compreface-api
+    ports:
+      - "8080:8080"
+
+  compreface-api:
+    image: exadel/compreface-core:1.2.0
+    container_name: "compreface-api"
+    restart: always
+    depends_on:
+      - compreface-postgres-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_URL=jdbc:postgresql://compreface-postgres-db:5432/frs
+      - SPRING_PROFILES_ACTIVE=dev
+      - API_JAVA_OPTS=-Xmx8g
+    ports:
+      - "8000:8000"
+
+  compreface-fe:
+    image: exadel/compreface-fe:1.2.0
+    container_name: "compreface-ui"
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - compreface-admin
+      - compreface-api
+    environment:
+      - CLIENT_MAX_BODY_SIZE=10M
+
+volumes:
+  postgres-data:

@@ -14,7 +14,7 @@ interface UploadedFile {
   file: File;
   preview: string;
   progress: number;
-  status: 'uploading' | 'completed' | 'error';
+  status: 'uploading' | 'detecting-faces' | 'completed' | 'error';
   faces?: number;
 }
 
@@ -76,7 +76,14 @@ const Upload = () => {
       setUploadedFiles(prev => [...prev, newFile]);
       
       try {
-        await uploadPhotoMutation.mutateAsync({ file, groupId: selectedGroupId });
+        // Update status to show face detection is happening
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === id ? { ...f, status: 'detecting-faces' as const, progress: 50 } : f
+        ));
+        
+        const result = await uploadPhotoMutation.mutateAsync({ file, groupId: selectedGroupId });
+        
+        const faceCount = Array.isArray(result.detected_faces) ? result.detected_faces.length : 0;
         
         setUploadedFiles(prev => prev.map(f => 
           f.id === id 
@@ -84,7 +91,7 @@ const Upload = () => {
                 ...f, 
                 progress: 100, 
                 status: 'completed' as const,
-                faces: Math.floor(Math.random() * 4) + 1
+                faces: faceCount
               }
             : f
         ));
@@ -244,10 +251,24 @@ const Upload = () => {
                         </div>
                       )}
                       
+                      {file.status === 'detecting-faces' && (
+                        <div className="mt-2">
+                          <div className="flex items-center space-x-2">
+                            <LoadingSpinner size="sm" />
+                            <span className="text-sm text-blue-600">Detecting faces...</span>
+                          </div>
+                        </div>
+                      )}
+                      
                       {file.status === 'completed' && (
                         <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
                           <Check className="w-4 h-4" />
                           <span>Upload complete</span>
+                          {file.faces !== undefined && file.faces > 0 && (
+                            <span className="text-purple-600">
+                              • {file.faces} face{file.faces !== 1 ? 's' : ''} detected
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

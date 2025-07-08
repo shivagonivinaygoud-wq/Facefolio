@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { uploadPhoto, getGroupPhotos, deletePhoto } from '@/services/database';
+import { uploadPhoto, getGroupPhotos, deletePhoto, updatePhotoWithFaces } from '@/services/database';
+import { compreFaceService } from '@/services/compreface';
 import { useToast } from '@/hooks/use-toast';
 
 export const useGroupPhotos = (groupId: string) => {
@@ -16,12 +17,35 @@ export const useUploadPhoto = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ file, groupId }: { file: File; groupId: string }) => uploadPhoto(file, groupId),
+    mutationFn: async ({ file, groupId }: { file: File; groupId: string }) => {
+      // First upload the photo
+      const photo = await uploadPhoto(file, groupId);
+      
+      try {
+        // Then detect faces
+        console.log('Starting face detection for photo:', photo.id);
+        const detectedFaces = await compreFaceService.detectFaces(file);
+        console.log('Face detection completed:', detectedFaces.length, 'faces found');
+        
+        // Update photo with detected faces
+        if (detectedFaces.length > 0) {
+          await updatePhotoWithFaces(photo.id, detectedFaces);
+          console.log('Photo updated with face detection data');
+        }
+        
+        return { ...photo, detected_faces: detectedFaces };
+      } catch (faceDetectionError) {
+        console.error('Face detection failed, but photo was uploaded:', faceDetectionError);
+        // Don't fail the entire upload if face detection fails
+        return photo;
+      }
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['group-photos', data.group_id] });
+      const faceCount = Array.isArray(data.detected_faces) ? data.detected_faces.length : 0;
       toast({
         title: "Success",
-        description: "Photo uploaded successfully!",
+        description: `Photo uploaded successfully! ${faceCount > 0 ? `${faceCount} face${faceCount !== 1 ? 's' : ''} detected.` : ''}`,
       });
     },
     onError: (error: any) => {

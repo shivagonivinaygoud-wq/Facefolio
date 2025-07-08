@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -131,6 +130,21 @@ export const uploadPhoto = async (file: File, groupId: string) => {
       file_size: file.size,
       mime_type: file.type
     })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// New function to update photo with detected faces
+export const updatePhotoWithFaces = async (photoId: string, detectedFaces: any[]) => {
+  const { data, error } = await supabase
+    .from('photos')
+    .update({
+      detected_faces: detectedFaces
+    })
+    .eq('id', photoId)
     .select()
     .single();
 
