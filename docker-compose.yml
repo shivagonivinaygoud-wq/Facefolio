@@ -49,7 +49,7 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - API_JAVA_OPTS=-Xmx8g
     ports:
-      - "8000:8000"
+      - "8000:3000"
 
   compreface-fe:
     image: exadel/compreface-fe:1.2.0
