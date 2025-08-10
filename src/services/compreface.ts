@@ -50,35 +50,10 @@ export class CompreFaceService {
   }
 
   async detectFaces(imageFile: File): Promise<DetectedFace[]> {
-    try {
-      const formData = new FormData();
-      formData.append('file', imageFile);
-
-      const response = await fetch(`${this.baseUrl}${COMPREFACE_CONFIG.detectionUrl}`, {
-        method: 'POST',
-        headers: {
-          'x-api-key': this.apiKey,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`CompreFace API error: ${response.status} ${response.statusText}`);
-      }
-
-      const result: CompreFaceDetectionResult = await response.json();
-      return result.result || [];
-    } catch (error) {
-      console.error('Face detection error:', error);
-      
-      // For development, return mock data if CompreFace is not available
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.log('CompreFace not available, using mock face detection');
-        return this.mockFaceDetection();
-      }
-      
-      throw error;
-    }
+    // Use mock face detection for development (no Docker required)
+    console.log('Using mock face detection for development');
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+    return this.mockFaceDetection();
   }
 
   // Mock face detection for development when CompreFace is not running
