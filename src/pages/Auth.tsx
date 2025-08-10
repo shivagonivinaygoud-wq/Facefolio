@@ -47,16 +47,25 @@ const Auth = () => {
       }
 
       if (result.error) {
+        let errorMessage = result.error.message;
+        
+        // Handle specific auth errors with better messages
+        if (result.error.message === "Invalid login credentials") {
+          errorMessage = "Invalid email or password. If you just signed up, please check your email for a confirmation link first.";
+        } else if (result.error.message === "Email not confirmed") {
+          errorMessage = "Please check your email and click the confirmation link before signing in.";
+        }
+        
         toast({
           title: "Error",
-          description: result.error.message,
+          description: errorMessage,
           variant: "destructive"
         });
       } else {
         if (!isLogin) {
           toast({
             title: "Success",
-            description: "Account created successfully! Please check your email to verify your account.",
+            description: "Account created successfully! Please check your email (including spam folder) to verify your account before signing in.",
           });
         }
       }
